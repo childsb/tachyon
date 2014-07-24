@@ -1,0 +1,38 @@
+<!--  
+
+	Default core-site.xml configuration for tachyon in standalone configuraitons.  this is overriden with hadoop in classpath.
+	
+	
+ -->
+ 
+ <configuration>
+	<!-- 
+	<property>
+		<name>fs.tachyon.impl</name>
+		<value>org.apache.hadoop.fs.glusterfs.GlusterFileSystem</value>
+	</property>
+
+	<property>
+		<name>fs.default.name</name>
+		<value>tachyon:///</value>
+	</property>
+
+	<property>
+		<name>fs.glusterfs.volumes</name>
+		<value>gv0</value>
+	</property>
+
+	<property>
+		<name>fs.glusterfs.volume.fuse.gv0</name>
+		<value>/mnt/gv0</value>
+	</property>
+
+	<property>
+		<name>yarn.nodemanager.container-executor.class</name>
+		<value>org.apache.hadoop.yarn.server.nodemanager.LinuxContainerExecutor
+		</value>
+	</property>
+ -->
+
+
+</configuration>

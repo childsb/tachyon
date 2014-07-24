@@ -17,9 +17,10 @@ package tachyon;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URI;
 import java.util.List;
 
-import tachyon.util.CommonUtils;
+import org.apache.hadoop.fs.Path;
 
 /**
  * Tachyon stores data into an under layer file system. Any file system implementing this interface
@@ -53,7 +54,12 @@ public abstract class UnderFileSystem {
   public static UnderFileSystem get(String path) {
     return get(path, null);
   }
+  
+  /* make a relative/unqualified path absolute to this filesystem */
+public abstract URI makeQualified(String path);
+    
 
+  
   /**
    * Get the UnderFileSystem instance according to its scheme and configuration.
    * 
@@ -64,14 +70,7 @@ public abstract class UnderFileSystem {
    * @return null for any unknown scheme.
    */
   public static UnderFileSystem get(String path, Object conf) {
-    if (path.startsWith("hdfs://") || path.startsWith("s3://") || path.startsWith("s3n://")
-        || path.startsWith("glusterfs:///")) {
-      return UnderFileSystemHdfs.getClient(path, conf);
-    } else if (path.startsWith(Constants.PATH_SEPARATOR) || path.startsWith("file://")) {
-      return UnderFileSystemSingleLocal.getClient();
-    }
-    CommonUtils.illegalArgumentException("Unknown under file system scheme " + path);
-    return null;
+      return UnderFileSystemHcfs.getClient(path, conf);
   }
 
   /**

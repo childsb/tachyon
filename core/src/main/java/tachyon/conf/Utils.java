@@ -26,8 +26,6 @@ import tachyon.util.CommonUtils;
  */
 class Utils {
   private static final Logger LOG = Logger.getLogger("");
-
-  protected static Configuration hadoopConf;
   protected static PropertiesConfiguration commonConf;
 
   static {
@@ -39,17 +37,7 @@ class Utils {
     } catch (ConfigurationException e) {
       LOG.error("Fatal error loading tachyon.properties:" + e);
     }
-    setConf(new Configuration(false));
-  }
-
-  public static void setConf(Configuration conf) {
-    hadoopConf = conf;
-    /* add default XML values stored in the JAR */
-    hadoopConf.addResource(Configuration.class.getClassLoader().getResourceAsStream(
-        "tachyon-site.xml"));
-    /* add any over-ride tachyon-site.xml from the classpath/class loader */
-    hadoopConf.addResource("tachyon-site.xml");
-    hadoopConf.reloadConfiguration();
+   
   }
 
   public static boolean getBooleanProperty(String property) {
@@ -86,8 +74,6 @@ class Utils {
     if (ret == null) {
       ret = commonConf.getString(property);
     }
-    if (ret == null)
-      ret = hadoopConf.get(property);
 
     if (ret == null) {
       CommonUtils.illegalArgumentException(property + " is not configured.");

@@ -16,6 +16,8 @@ package tachyon;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -31,64 +33,48 @@ import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
 import org.apache.log4j.Logger;
 
-import tachyon.conf.CommonConf;
-import tachyon.hadoop.Utils;
 import tachyon.util.CommonUtils;
 
 /**
  * HDFS UnderFilesystem implementation.
  */
-public class UnderFileSystemHdfs extends UnderFileSystem {
+public class UnderFileSystemHcfs extends UnderFileSystem {
   private static final int MAX_TRY = 5;
   private final Logger LOG = Logger.getLogger(Constants.LOGGER_TYPE);
 
   private FileSystem mFs = null;
-  private String mUfsPrefix = null;
+  private static Configuration defaultConfig;
+  
+  static{
+    Configuration.addDefaultResource("tachyon-site.xml");
+   }
+
+  public static Configuration getDefaultConfig(){
+    if(defaultConfig==null){
+      defaultConfig = new Configuration();
+    }
+    
+    return defaultConfig;
+  }
+
   // TODO add sticky bit and narrow down the permission in hadoop 2
   private static final FsPermission PERMISSION = new FsPermission((short) 0777)
       .applyUMask(FsPermission.createImmutable((short) 0000));
 
-  public static UnderFileSystemHdfs getClient(String path) {
-    return new UnderFileSystemHdfs(path, null);
+  public static UnderFileSystemHcfs getClient(String path, Object conf) {
+    return new UnderFileSystemHcfs(path, conf);
   }
 
-  public static UnderFileSystemHdfs getClient(String path, Object conf) {
-    return new UnderFileSystemHdfs(path, conf);
-  }
-
-  private UnderFileSystemHdfs(String fsDefaultName, Object conf) {
+  private UnderFileSystemHcfs(String pathUri, Object conf) {
+    
+    if(conf==null){
+      conf = getDefaultConfig();
+    }
+    
     try {
-      mUfsPrefix = fsDefaultName;
-      Configuration tConf = null;
-      if (conf != null) {
-        tConf = (Configuration) conf;
-      } else {
-        tConf = new Configuration();
-      }
-      tConf.set("fs.defaultFS", fsDefaultName);
-      String glusterfsPrefix = "glusterfs:///";
-      if (fsDefaultName.startsWith(glusterfsPrefix)) {
-        tConf.set("fs.glusterfs.impl", CommonConf.get().UNDERFS_GLUSTERFS_IMPL);
-        tConf.set("mapred.system.dir", CommonConf.get().UNDERFS_GLUSTERFS_MR_DIR);
-        tConf.set("fs.glusterfs.volumes", CommonConf.get().UNDERFS_GLUSTERFS_VOLUMES);
-        tConf.set("fs.glusterfs.volume.fuse." + CommonConf.get().UNDERFS_GLUSTERFS_VOLUMES,
-            CommonConf.get().UNDERFS_GLUSTERFS_MOUNTS);
-      } else {
-        tConf.set("fs.hdfs.impl", CommonConf.get().UNDERFS_HDFS_IMPL);
-
-        // To disable the instance cache for hdfs client, otherwise it causes the
-        // FileSystem closed exception. Being configurable for unit/integration
-        // test only, and not expose to the end-user currently.
-        tConf.set("fs.hdfs.impl.disable.cache",
-            System.getProperty("fs.hdfs.impl.disable.cache", "false"));
-      }
-
-      Utils.addS3Credentials(tConf);
-
-      Path path = new Path(mUfsPrefix);
-      mFs = path.getFileSystem(tConf);
-      // FileSystem.get(tConf);
-      // mFs = FileSystem.get(new URI(fsDefaultName), tConf);
+      mFs = FileSystem.get(new URI(pathUri), (Configuration)conf);
+    } catch (URISyntaxException e) {
+      CommonUtils.runtimeException(e);
     } catch (IOException e) {
       CommonUtils.runtimeException(e);
     }
@@ -361,4 +347,8 @@ public class UnderFileSystemHdfs extends UnderFileSystem {
       LOG.error(e);
     }
   }
+  public URI makeQualified(String path) {
+   return mFs.makeQualified(new Path(path)).toUri();
+  }
+
 }
